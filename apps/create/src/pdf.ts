@@ -1,4 +1,4 @@
-import PDFDocument from "pdfkit";
+import PDFDocument from "pdfkit/js/pdfkit.standalone.js";
 import type { Edition, ReaderStory } from "./types.js";
 import type { Sudoku } from "./puzzles.js";
 
