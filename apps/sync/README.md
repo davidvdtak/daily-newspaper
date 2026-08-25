@@ -54,6 +54,7 @@ S3 ObjectCreated event:
 ## IAM
 Needs:
 - `s3:GetObject` for the PDF prefix
+- `s3:ListBucket` for the source bucket
 
 ## Deletion behavior
 Old editions are moved to reMarkable Trash rather than permanently purged.

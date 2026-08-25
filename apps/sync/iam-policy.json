@@ -8,6 +8,11 @@
     },
     {
       "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": "arn:aws:s3:::YOUR_BUCKET"
+    },
+    {
+      "Effect": "Allow",
       "Action": ["secretsmanager:GetSecretValue"],
       "Resource": "YOUR_SECRET_ARN"
     }
