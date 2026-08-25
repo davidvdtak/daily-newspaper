@@ -33,12 +33,12 @@ Rules:
 - Summaries must be original and based only on supplied facts.
 - If feed metadata is insufficient for a claim, omit the claim.
 - Prefer important hard news, then business/technology/science/culture/sports.
-- Create 1 lead story, 10-14 short briefing stories, and 11-13 additional main stories across the sections.
+- Create 1 lead story, 10-14 short briefing stories, and 18-22 additional main stories across the sections.
 - Briefing stories should be short: headline, dek, and at most 1 brief body paragraph.
 - The lead story should have 7-9 concise body paragraphs of 45-65 words each.
-- Each main story should have 6-8 concise body paragraphs of 45-65 words each.
+- Each main story should have 5-7 concise body paragraphs of 45-65 words each.
 - Make the lead and each main story substantial enough to fill a compact newspaper column layout.
-- Put 1-3 main stories in each populated section array, spread across at least 5 sections.
+- Put 2-4 main stories in each populated section array, spread across all available sections when possible.
 - sourceLinks must contain only URLs supplied in the input.
 - puzzleWords: 12 uppercase words, 4-10 letters, drawn from neutral concepts in today's coverage.
 - Return JSON only.

@@ -16,6 +16,20 @@ function pageHeader(doc: PDFKit.PDFDocument, label: string, date: string) {
   doc.moveTo(M, 32).lineTo(PAGE_W-M, 32).lineWidth(.5).stroke();
 }
 
+function pageFooter(doc: PDFKit.PDFDocument, date: string, page: number) {
+  doc.font("Helvetica").fontSize(7).text(
+    `THE DAILY NEWSPAPER • ${date} • ${page}`,
+    M,
+    FOOTER_Y,
+    {
+      width: PAGE_W - M*2,
+      height: 9,
+      align: "center",
+      lineBreak: false
+    }
+  );
+}
+
 function masthead(doc: PDFKit.PDFDocument, date: string) {
   doc.font("Times-Bold").fontSize(30).text("THE DAILY NEWSPAPER", M, 42, { align: "center" });
   doc.font("Helvetica").fontSize(8).text("INDEPENDENT MORNING EDITION • BUILT FOR E-INK", M, 78, { align: "center" });
@@ -103,7 +117,7 @@ function mainStories(edition: Edition) {
     .filter((s) => s.headline && s.body?.length)
     .map((s) => ({ ...s, section: s.section || "BRIEFING" }));
 
-  return sections.length >= 13 ? sections.slice(0, 13) : [...sections, ...fallback].slice(0, 13);
+  return sections.length >= 22 ? sections.slice(0, 22) : [...sections, ...fallback].slice(0, 22);
 }
 
 function articlePages(doc: PDFKit.PDFDocument, edition: Edition) {
@@ -191,10 +205,11 @@ export async function renderPdf(edition: Edition, sudoku: Sudoku): Promise<Buffe
   const range = doc.bufferedPageRange();
   for (let i=0; i<range.count; i++) {
     doc.switchToPage(i);
-    doc.font("Helvetica").fontSize(7).text(
-      `THE DAILY NEWSPAPER • ${edition.date} • ${i+1}`,
-      M, FOOTER_Y, { width: PAGE_W-M*2, align: "center" }
-    );
+    pageFooter(doc, edition.date, i+1);
+  }
+  const finalRange = doc.bufferedPageRange();
+  if (finalRange.count !== range.count) {
+    throw new Error(`Footer rendering unexpectedly changed page count from ${range.count} to ${finalRange.count}`);
   }
 
   doc.end();
