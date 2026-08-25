@@ -42,7 +42,7 @@ const edition: Edition = {
 forceLocalSections(edition, [localArticle]);
 
 assert.equal(edition.lead.section, "LOCAL");
-assert.equal(edition.briefing[0].section, "LOCAL");
+assert.equal(edition.briefing.length, 0);
 assert.equal(edition.sections["U.S."].length, 0);
-assert.equal(edition.sections.LOCAL.length, 1);
-assert.equal(edition.sections.LOCAL[0].section, "LOCAL");
+assert.equal(edition.sections.LOCAL.length, 2);
+assert.deepEqual(edition.sections.LOCAL.map((story) => story.section), ["LOCAL", "LOCAL"]);

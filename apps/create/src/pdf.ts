@@ -205,7 +205,7 @@ export async function renderPdf(edition: Edition, sudoku: Sudoku): Promise<Buffe
 
   doc.moveTo(M, 415).lineTo(PAGE_W-M, 415).lineWidth(.7).stroke();
   doc.font("Helvetica-Bold").fontSize(8).text("THE BRIEFING", M, 426);
-  const briefs = localStoriesLast(edition.briefing, edition.briefing.length).slice(0, 8);
+  const briefs = edition.briefing.filter((b) => !isLocalStory(b)).slice(0, 8);
   let y = 445;
   briefs.forEach((b, i) => {
     const x = i % 2 === 0 ? M : PAGE_W/2 + 6;

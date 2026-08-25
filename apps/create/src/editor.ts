@@ -63,6 +63,11 @@ export function forceLocalSections(edition: Edition, articles: SourceArticle[]) 
       return false;
     });
   }
+  edition.briefing = (edition.briefing || []).filter(story => {
+    if (story.section !== "LOCAL") return true;
+    localStories.push(story);
+    return false;
+  });
   edition.sections.LOCAL = [...localStories, ...(edition.sections.LOCAL || [])];
 }
 
@@ -90,6 +95,7 @@ Rules:
 - Prefer important hard news, then business/technology/science/culture/sports.
 - Articles marked isLocal=true came from LOCAL_NEWS_RSS_URLS.
 - Use section "LOCAL" for every story primarily based on isLocal=true articles; do not label local feed stories as "U.S.".
+- Local feed stories must be main stories in sections.LOCAL only. Do not use local feed stories for briefing stories.
 - Create 1 lead story, 10-14 short briefing stories, and 18-22 additional main stories across the sections.
 - Every story object must include non-empty section, headline, dek, body, and sourceLinks fields.
 - Briefing stories should be short: headline, dek, and at most 1 brief body paragraph.
