@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",
-    "rmapi-js": "^2.0.0"
+    "rmapi-js": "^14.2.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",

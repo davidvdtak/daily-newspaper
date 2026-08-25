@@ -1,7 +1,7 @@
 import type { S3Event } from "aws-lambda";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { remarkable } from "rmapi-js";
-import type { CollectionEntry, Metadata, RemarkableApi } from "rmapi-js";
+import type { Entry } from "rmapi-js";
 
 const s3 = new S3Client({});
 
@@ -22,37 +22,6 @@ function editionDate(name: string) {
   return m ? m[1] : null;
 }
 
-type CloudItem = Metadata & {
-  id: string;
-  hash: string;
-};
-
-async function metadataForEntry(api: RemarkableApi, entry: CollectionEntry): Promise<CloudItem | null> {
-  const children = await api.getEntries(entry.hash);
-  const meta = children.find((child) => child.documentId === `${entry.documentId}.metadata`);
-  if (!meta) return null;
-
-  return {
-    ...(await api.getMetadata(meta.hash)),
-    id: entry.documentId,
-    hash: entry.hash
-  };
-}
-
-async function collectionItems(api: RemarkableApi, collectionHash: string): Promise<CloudItem[]> {
-  const entries = await api.getEntries(collectionHash);
-  const items = await Promise.all(entries
-    .filter((entry): entry is CollectionEntry => entry.type === "80000000")
-    .map((entry) => metadataForEntry(api, entry)));
-
-  return items.filter((item): item is CloudItem => item !== null);
-}
-
-async function rootItems(api: RemarkableApi): Promise<CloudItem[]> {
-  const [rootHash] = await api.getRootHash({ cache: false });
-  return collectionItems(api, rootHash);
-}
-
 export const handler = async (event: S3Event) => {
   const record = event.Records?.[0];
   if (!record) throw new Error("Expected an S3 ObjectCreated event");
@@ -67,7 +36,7 @@ export const handler = async (event: S3Event) => {
 
   const token = deviceToken();
   const api = await remarkable(token);
-  let items = await rootItems(api);
+  let items = await api.listItems(true);
 
   const folderName = process.env.REMARKABLE_FOLDER || "Daily Newspaper";
   let folder = items.find((x) =>
@@ -75,36 +44,31 @@ export const handler = async (event: S3Event) => {
   );
 
   if (!folder) {
-    const folderRef = await api.putCollection(folderName);
-    await api.create(folderRef, true);
-    items = await rootItems(api);
-    folder = items.find((x) => x.id === folderRef.documentId) ||
+    const folderRef = await api.putFolder(folderName);
+    items = await api.listItems(true);
+    folder = items.find((x) => x.id === folderRef.id) ||
       items.find((x) => x.type === "CollectionType" && x.visibleName === folderName);
   }
   if (!folder) throw new Error("Could not create/find Daily Newspaper folder");
 
   const visibleName = key.split("/").pop()!.replace(/\.pdf$/i, "");
-  items = await collectionItems(api, folder.hash);
   const existing = items.find((x) =>
     x.type === "DocumentType" && x.visibleName === visibleName && x.parent === folder.id
   );
 
   if (!existing) {
-    const uploaded = await api.putPdf(visibleName, pdf, { parent: folder.id });
-    await api.create(uploaded, true);
+    await api.putPdf(visibleName, pdf, { parent: folder.id, refresh: true });
   }
 
   // Refresh, sort editions newest-first, and keep exactly the newest N.
-  const refreshedFolder = (await rootItems(api)).find((x) => x.id === folder.id);
-  if (!refreshedFolder) throw new Error("Could not refresh Daily Newspaper folder");
-  items = await collectionItems(api, refreshedFolder.hash);
+  items = await api.listItems(true);
   const keep = Number(process.env.KEEP_EDITIONS || "5");
   const editions = items
     .filter((x) => x.type === "DocumentType" && x.parent === folder.id && editionDate(x.visibleName))
     .sort((a, b) => editionDate(b.visibleName)!.localeCompare(editionDate(a.visibleName)!));
 
   const old = editions.slice(keep);
-  if (old.length) await Promise.all(old.map((x) => api.move(x.id, "trash", true)));
+  if (old.length) await Promise.all(old.map((x) => api.move(toItemRef(x), "trash", true)));
 
   return {
     statusCode: 200,
@@ -114,3 +78,7 @@ export const handler = async (event: S3Event) => {
     deleted: old.map((x) => x.visibleName)
   };
 };
+
+function toItemRef(entry: Entry) {
+  return { id: entry.id, hash: entry.hash };
+}
