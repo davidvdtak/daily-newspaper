@@ -4,7 +4,7 @@ import type { Sudoku } from "./puzzles.js";
 
 const PAGE_W = 540, PAGE_H = 720;
 const M = 34;
-const FOOTER_Y = PAGE_H - 24;
+const FOOTER_Y = PAGE_H - M - 8;
 const ARTICLE_TOP = 48;
 const ARTICLE_BOTTOM = PAGE_H - 44;
 const ARTICLE_GAP = 14;
@@ -103,7 +103,7 @@ function mainStories(edition: Edition) {
     .filter((s) => s.headline && s.body?.length)
     .map((s) => ({ ...s, section: s.section || "BRIEFING" }));
 
-  return sections.length >= 4 ? sections.slice(0, 4) : [...sections, ...fallback].slice(0, 4);
+  return sections.length >= 13 ? sections.slice(0, 13) : [...sections, ...fallback].slice(0, 13);
 }
 
 function articlePages(doc: PDFKit.PDFDocument, edition: Edition) {
@@ -175,13 +175,13 @@ export async function renderPdf(edition: Edition, sudoku: Sudoku): Promise<Buffe
 
   doc.moveTo(M, 415).lineTo(PAGE_W-M, 415).lineWidth(.7).stroke();
   doc.font("Helvetica-Bold").fontSize(8).text("THE BRIEFING", M, 426);
-  const briefs = edition.briefing.slice(0, 6);
+  const briefs = edition.briefing.slice(0, 8);
   let y = 445;
   briefs.forEach((b, i) => {
     const x = i % 2 === 0 ? M : PAGE_W/2 + 6;
-    if (i % 2 === 0 && i > 0) y += 74;
+    if (i % 2 === 0 && i > 0) y += 58;
     doc.font("Times-Bold").fontSize(10).text(b.headline, x, y, { width: 220 });
-    doc.font("Times-Roman").fontSize(8).text(b.dek, x, doc.y+2, { width: 220, height: 42, ellipsis: true });
+    doc.font("Times-Roman").fontSize(8).text(b.dek, x, doc.y+2, { width: 220, height: 30, ellipsis: true });
   });
 
   articlePages(doc, edition);
