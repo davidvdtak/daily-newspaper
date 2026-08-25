@@ -1,0 +1,50 @@
+name: Create Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+  push:
+    branches:
+      - production
+    paths:
+      - 'apps/create/**'
+      - 'shared/**'
+      
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: | 
+          npm install
+
+      - name: Build App
+        run: | 
+          cd apps/create
+          npm run build
+
+      - name: Deploy Lambda
+        env:                  
+          AWS_ACCESS_KEY_ID: ${{ secrets.LAMBDA_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.LAMBDA_SECRET_ACCESS_KEY }}
+        run: |    
+          cd apps/create/dist; 
+          zip -r upload.zip * 
+          aws --no-paginate --region=${{ secrets.LAMBDA_REGION }} lambda update-function-code --function-name ${{ secrets.LAMBDA_FUNCTION_CREATE }} --zip-file fileb://upload.zip

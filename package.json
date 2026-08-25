@@ -1,0 +1,21 @@
+{
+  "name": "daily-newspaper-monorepo",
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "shared/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "build:create": "npm --workspace apps/create run build",
+    "build:sync": "npm --workspace apps/sync run build",
+    "typecheck": "npm run typecheck --workspaces",
+    "typecheck:create": "npm --workspace apps/create run typecheck",
+    "typecheck:sync": "npm --workspace apps/sync run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "dotenv-cli": "^11.0.0",
+    "tsx": "^4.20.6"
+  }
+}

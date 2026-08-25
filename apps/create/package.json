@@ -1,0 +1,24 @@
+{
+  "name": "build-daily-reader",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/index.mjs --external:@aws-sdk/*",
+    "typecheck": "tsc --noEmit",
+    "zip": "npm run build && cd dist && zip -r ../build-daily-reader-deploy.zip index.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "openai": "^5.0.0",
+    "pdfkit": "^0.17.1",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^22.0.0",
+    "@types/pdfkit": "^0.17.3",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0"
+  }
+}

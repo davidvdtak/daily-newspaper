@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2023",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "strict": true,
+    "types": ["node"],
+    "paths": {
+      "@base/*": ["./"]
+    }
+  },
+  "ts-node": {
+    "esm": true
+  }
+}
