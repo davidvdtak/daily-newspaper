@@ -39,11 +39,11 @@ function masthead(doc: PDFKit.PDFDocument, date: string) {
 
 function story(doc: PDFKit.PDFDocument, s: ReaderStory, x: number, y: number, w: number, maxH: number) {
   const start = y;
-  doc.font("Helvetica-Bold").fontSize(7).text(s.section.toUpperCase(), x, y, { width: w });
+  doc.font("Helvetica-Bold").fontSize(7).text((s.section || "NEWS").toUpperCase(), x, y, { width: w });
   y = doc.y + 3;
-  doc.font("Times-Bold").fontSize(15).text(s.headline, x, y, { width: w, lineGap: 1 });
+  doc.font("Times-Bold").fontSize(15).text(s.headline || "Untitled", x, y, { width: w, lineGap: 1 });
   y = doc.y + 4;
-  doc.font("Times-Italic").fontSize(9).text(s.dek, x, y, { width: w, lineGap: 1 });
+  doc.font("Times-Italic").fontSize(9).text(s.dek || "", x, y, { width: w, lineGap: 1 });
   y = doc.y + 5;
   for (const p of s.body) {
     if (doc.y > start + maxH - 35) break;
@@ -85,19 +85,19 @@ function textHeight(doc: PDFKit.PDFDocument, text: string, width: number, font: 
 
 function articleIntroHeight(doc: PDFKit.PDFDocument, s: ReaderStory) {
   return 7 +
-    textHeight(doc, s.section.toUpperCase(), ARTICLE_COL_W, "Helvetica-Bold", 7) + 3 +
-    textHeight(doc, s.headline, ARTICLE_COL_W, "Times-Bold", 14, 1) + 4 +
-    textHeight(doc, s.dek, ARTICLE_COL_W, "Times-Italic", 9, 1) + 7;
+    textHeight(doc, (s.section || "NEWS").toUpperCase(), ARTICLE_COL_W, "Helvetica-Bold", 7) + 3 +
+    textHeight(doc, s.headline || "Untitled", ARTICLE_COL_W, "Times-Bold", 14, 1) + 4 +
+    textHeight(doc, s.dek || "", ARTICLE_COL_W, "Times-Italic", 9, 1) + 7;
 }
 
 function drawFullStory(doc: PDFKit.PDFDocument, s: ReaderStory, cursor: ColumnCursor, date: string) {
   ensureArticleSpace(doc, cursor, articleIntroHeight(doc, s), date);
 
-  doc.font("Helvetica-Bold").fontSize(7).text(s.section.toUpperCase(), cursor.x, cursor.y, { width: ARTICLE_COL_W });
+  doc.font("Helvetica-Bold").fontSize(7).text((s.section || "NEWS").toUpperCase(), cursor.x, cursor.y, { width: ARTICLE_COL_W });
   cursor.y = doc.y + 3;
-  doc.font("Times-Bold").fontSize(14).text(s.headline, cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
+  doc.font("Times-Bold").fontSize(14).text(s.headline || "Untitled", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
   cursor.y = doc.y + 4;
-  doc.font("Times-Italic").fontSize(9).text(s.dek, cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
+  doc.font("Times-Italic").fontSize(9).text(s.dek || "", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
   cursor.y = doc.y + 7;
 
   for (const p of s.body) {
@@ -110,14 +110,30 @@ function drawFullStory(doc: PDFKit.PDFDocument, s: ReaderStory, cursor: ColumnCu
   cursor.y += 8;
 }
 
+function isLocalStory(s: ReaderStory) {
+  return (s.section || "").toUpperCase() === "LOCAL";
+}
+
+function localStoriesLast(stories: ReaderStory[], limit: number) {
+  const local = stories.filter(isLocalStory);
+  const nonLocal = stories.filter((s) => !isLocalStory(s));
+  const localCount = Math.min(local.length, limit);
+
+  return [
+    ...nonLocal.slice(0, limit - localCount),
+    ...local.slice(0, localCount)
+  ];
+}
+
 function mainStories(edition: Edition) {
   const sections = Object.values(edition.sections).flat()
-    .filter((s) => s.headline && s.body?.length);
+    .filter((s) => s?.headline && Array.isArray(s.body) && s.body.length);
   const fallback = edition.briefing
-    .filter((s) => s.headline && s.body?.length)
+    .filter((s) => s?.headline && Array.isArray(s.body) && s.body.length)
     .map((s) => ({ ...s, section: s.section || "BRIEFING" }));
+  const candidates = sections.length >= 22 ? sections : [...sections, ...fallback];
 
-  return sections.length >= 22 ? sections.slice(0, 22) : [...sections, ...fallback].slice(0, 22);
+  return localStoriesLast(candidates, 22);
 }
 
 function articlePages(doc: PDFKit.PDFDocument, edition: Edition) {
@@ -189,7 +205,7 @@ export async function renderPdf(edition: Edition, sudoku: Sudoku): Promise<Buffe
 
   doc.moveTo(M, 415).lineTo(PAGE_W-M, 415).lineWidth(.7).stroke();
   doc.font("Helvetica-Bold").fontSize(8).text("THE BRIEFING", M, 426);
-  const briefs = edition.briefing.slice(0, 8);
+  const briefs = localStoriesLast(edition.briefing, edition.briefing.length).slice(0, 8);
   let y = 445;
   briefs.forEach((b, i) => {
     const x = i % 2 === 0 ? M : PAGE_W/2 + 6;

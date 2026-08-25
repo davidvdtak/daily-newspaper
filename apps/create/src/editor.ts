@@ -1,7 +1,9 @@
 import OpenAI from "openai";
-import type { Edition, SourceArticle } from "./types.js";
+import type { Edition, ReaderStory, SourceArticle } from "./types.js";
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function openAiClient() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 function extractJson(text: string) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -10,6 +12,58 @@ function extractJson(text: string) {
   const end = candidate.lastIndexOf("}");
   if (start < 0 || end < 0) throw new Error("Model did not return JSON");
   return JSON.parse(candidate.slice(start, end + 1));
+}
+
+function sameLink(a: string, b: string) {
+  const normalize = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+
+    try {
+      const url = new URL(trimmed);
+      url.hash = "";
+      url.search = "";
+      return `${url.origin}${url.pathname.replace(/\/$/, "")}`;
+    } catch {
+      return trimmed.replace(/[#?].*$/, "").replace(/\/$/, "");
+    }
+  };
+
+  return normalize(a) === normalize(b);
+}
+
+function usesLocalSource(story: ReaderStory, localLinks: string[]) {
+  return (story.sourceLinks || []).some(link =>
+    localLinks.some(localLink => sameLink(link, localLink))
+  );
+}
+
+export function forceLocalSections(edition: Edition, articles: SourceArticle[]) {
+  const localLinks = articles
+    .filter(a => a.isLocal && a.link)
+    .map(a => a.link);
+  if (!localLinks.length) return;
+
+  const mark = (story: ReaderStory) => {
+    if (usesLocalSource(story, localLinks)) story.section = "LOCAL";
+  };
+
+  mark(edition.lead);
+  edition.briefing?.forEach(mark);
+  for (const stories of Object.values(edition.sections || {})) {
+    stories?.forEach(mark);
+  }
+
+  const localStories: ReaderStory[] = [];
+  for (const [section, stories] of Object.entries(edition.sections || {})) {
+    if (section === "LOCAL") continue;
+    edition.sections[section] = stories.filter(story => {
+      if (story.section !== "LOCAL") return true;
+      localStories.push(story);
+      return false;
+    });
+  }
+  edition.sections.LOCAL = [...localStories, ...(edition.sections.LOCAL || [])];
 }
 
 export async function createEdition(date: string, articles: SourceArticle[]): Promise<Edition> {
@@ -21,7 +75,8 @@ export async function createEdition(date: string, articles: SourceArticle[]): Pr
     source: a.source,
     publishedAt: a.publishedAt,
     summary: (a.summary || "").slice(0, 700),
-    link: a.link
+    link: a.link,
+    isLocal: Boolean(a.isLocal)
   }));
 
   const prompt = `
@@ -33,7 +88,10 @@ Rules:
 - Summaries must be original and based only on supplied facts.
 - If feed metadata is insufficient for a claim, omit the claim.
 - Prefer important hard news, then business/technology/science/culture/sports.
+- Articles marked isLocal=true came from LOCAL_NEWS_RSS_URLS.
+- Use section "LOCAL" for every story primarily based on isLocal=true articles; do not label local feed stories as "U.S.".
 - Create 1 lead story, 10-14 short briefing stories, and 18-22 additional main stories across the sections.
+- Every story object must include non-empty section, headline, dek, body, and sourceLinks fields.
 - Briefing stories should be short: headline, dek, and at most 1 brief body paragraph.
 - The lead story should have 7-9 concise body paragraphs of 45-65 words each.
 - Each main story should have 5-7 concise body paragraphs of 45-65 words each.
@@ -49,6 +107,7 @@ Schema:
   "lead": {"section":"","headline":"","dek":"","body":[""],"sourceLinks":[""]},
   "briefing": [{"section":"","headline":"","dek":"","body":[""],"sourceLinks":[""]}],
   "sections": {
+    "LOCAL": [],
     "WORLD": [],
     "U.S.": [],
     "BUSINESS": [],
@@ -64,12 +123,13 @@ Feed metadata:
 ${JSON.stringify(compact)}
 `;
 
-  const response = await client.responses.create({
+  const response = await openAiClient().responses.create({
     model: process.env.OPENAI_MODEL || "gpt-5.6",
     input: prompt
   });
 
   const parsed = extractJson(response.output_text) as Edition;
   parsed.date = date;
+  forceLocalSections(parsed, articles);
   return parsed;
 }

@@ -4,6 +4,7 @@ export type SourceArticle = {
   source: string;
   publishedAt: string;
   summary?: string;
+  isLocal?: boolean;
 };
 
 export type ReaderStory = {

@@ -11,7 +11,8 @@
     "build:sync": "npm --workspace apps/sync run build",
     "typecheck": "npm run typecheck --workspaces",
     "typecheck:create": "npm --workspace apps/create run typecheck",
-    "typecheck:sync": "npm --workspace apps/sync run typecheck"
+    "typecheck:sync": "npm --workspace apps/sync run typecheck",
+    "preview": "dotenv -e .env -- npm --workspace apps/create run preview"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
