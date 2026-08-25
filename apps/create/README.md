@@ -18,6 +18,7 @@ Node.js 22.x, architecture x86_64 or arm64.
 - `TIMEZONE` default `America/New_York`
 - `NEWS_RSS_URLS` comma-separated RSS URLs (optional)
 - `EDITION_DATE` optional `YYYY-MM-DD` override for testing
+- `INCLUDE_PUZZLES` set to `true` to append puzzle and answer pages
 
 The default RSS feeds are public New York Times feeds. This function uses feed metadata as an editorial signal and generates original summaries; it does not reproduce full NYT articles.
 
