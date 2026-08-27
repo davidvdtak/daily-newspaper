@@ -9,6 +9,15 @@ const ARTICLE_TOP = 48;
 const ARTICLE_BOTTOM = PAGE_H - 44;
 const ARTICLE_GAP = 14;
 const ARTICLE_COL_W = (PAGE_W - M*2 - ARTICLE_GAP) / 2;
+const SECTION_LABEL_SIZE = 8;
+const FRONT_HEADLINE_SIZE = 17;
+const ARTICLE_HEADLINE_SIZE = 16;
+const DEK_SIZE = 10.5;
+const FRONT_BODY_SIZE = 11;
+const ARTICLE_BODY_SIZE = 10.8;
+const BODY_LINE_GAP = 2.4;
+const BRIEF_HEADLINE_SIZE = 11.5;
+const BRIEF_DEK_SIZE = 9.5;
 
 function pageHeader(doc: PDFKit.PDFDocument, label: string, date: string) {
   doc.font("Helvetica-Bold").fontSize(8).text(label, M, 20);
@@ -39,15 +48,15 @@ function masthead(doc: PDFKit.PDFDocument, date: string) {
 
 function story(doc: PDFKit.PDFDocument, s: ReaderStory, x: number, y: number, w: number, maxH: number) {
   const start = y;
-  doc.font("Helvetica-Bold").fontSize(7).text((s.section || "NEWS").toUpperCase(), x, y, { width: w });
+  doc.font("Helvetica-Bold").fontSize(SECTION_LABEL_SIZE).text((s.section || "NEWS").toUpperCase(), x, y, { width: w });
   y = doc.y + 3;
-  doc.font("Times-Bold").fontSize(15).text(s.headline || "Untitled", x, y, { width: w, lineGap: 1 });
+  doc.font("Times-Bold").fontSize(FRONT_HEADLINE_SIZE).text(s.headline || "Untitled", x, y, { width: w, lineGap: 1 });
   y = doc.y + 4;
-  doc.font("Times-Italic").fontSize(9).text(s.dek || "", x, y, { width: w, lineGap: 1 });
+  doc.font("Times-Italic").fontSize(DEK_SIZE).text(s.dek || "", x, y, { width: w, lineGap: 1 });
   y = doc.y + 5;
   for (const p of s.body) {
     if (doc.y > start + maxH - 35) break;
-    doc.font("Times-Roman").fontSize(9.4).text(p, x, doc.y, { width: w, lineGap: 2 });
+    doc.font("Times-Roman").fontSize(FRONT_BODY_SIZE).text(p, x, doc.y, { width: w, lineGap: BODY_LINE_GAP });
     doc.moveDown(.45);
   }
   return doc.y;
@@ -84,27 +93,27 @@ function textHeight(doc: PDFKit.PDFDocument, text: string, width: number, font: 
 }
 
 function articleIntroHeight(doc: PDFKit.PDFDocument, s: ReaderStory) {
-  return 7 +
-    textHeight(doc, (s.section || "NEWS").toUpperCase(), ARTICLE_COL_W, "Helvetica-Bold", 7) + 3 +
-    textHeight(doc, s.headline || "Untitled", ARTICLE_COL_W, "Times-Bold", 14, 1) + 4 +
-    textHeight(doc, s.dek || "", ARTICLE_COL_W, "Times-Italic", 9, 1) + 7;
+  return SECTION_LABEL_SIZE +
+    textHeight(doc, (s.section || "NEWS").toUpperCase(), ARTICLE_COL_W, "Helvetica-Bold", SECTION_LABEL_SIZE) + 3 +
+    textHeight(doc, s.headline || "Untitled", ARTICLE_COL_W, "Times-Bold", ARTICLE_HEADLINE_SIZE, 1) + 4 +
+    textHeight(doc, s.dek || "", ARTICLE_COL_W, "Times-Italic", DEK_SIZE, 1) + 7;
 }
 
 function drawFullStory(doc: PDFKit.PDFDocument, s: ReaderStory, cursor: ColumnCursor, date: string) {
   ensureArticleSpace(doc, cursor, articleIntroHeight(doc, s), date);
 
-  doc.font("Helvetica-Bold").fontSize(7).text((s.section || "NEWS").toUpperCase(), cursor.x, cursor.y, { width: ARTICLE_COL_W });
+  doc.font("Helvetica-Bold").fontSize(SECTION_LABEL_SIZE).text((s.section || "NEWS").toUpperCase(), cursor.x, cursor.y, { width: ARTICLE_COL_W });
   cursor.y = doc.y + 3;
-  doc.font("Times-Bold").fontSize(14).text(s.headline || "Untitled", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
+  doc.font("Times-Bold").fontSize(ARTICLE_HEADLINE_SIZE).text(s.headline || "Untitled", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
   cursor.y = doc.y + 4;
-  doc.font("Times-Italic").fontSize(9).text(s.dek || "", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
+  doc.font("Times-Italic").fontSize(DEK_SIZE).text(s.dek || "", cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1 });
   cursor.y = doc.y + 7;
 
   for (const p of s.body) {
-    const h = textHeight(doc, p, ARTICLE_COL_W, "Times-Roman", 9.2, 1.5) + 6;
+    const h = textHeight(doc, p, ARTICLE_COL_W, "Times-Roman", ARTICLE_BODY_SIZE, BODY_LINE_GAP) + 7;
     ensureArticleSpace(doc, cursor, h, date);
-    doc.font("Times-Roman").fontSize(9.2).text(p, cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: 1.5 });
-    cursor.y = doc.y + 6;
+    doc.font("Times-Roman").fontSize(ARTICLE_BODY_SIZE).text(p, cursor.x, cursor.y, { width: ARTICLE_COL_W, lineGap: BODY_LINE_GAP });
+    cursor.y = doc.y + 7;
   }
 
   cursor.y += 8;
@@ -209,9 +218,9 @@ export async function renderPdf(edition: Edition, sudoku: Sudoku): Promise<Buffe
   let y = 445;
   briefs.forEach((b, i) => {
     const x = i % 2 === 0 ? M : PAGE_W/2 + 6;
-    if (i % 2 === 0 && i > 0) y += 58;
-    doc.font("Times-Bold").fontSize(10).text(b.headline, x, y, { width: 220 });
-    doc.font("Times-Roman").fontSize(8).text(b.dek, x, doc.y+2, { width: 220, height: 30, ellipsis: true });
+    if (i % 2 === 0 && i > 0) y += 64;
+    doc.font("Times-Bold").fontSize(BRIEF_HEADLINE_SIZE).text(b.headline, x, y, { width: 220 });
+    doc.font("Times-Roman").fontSize(BRIEF_DEK_SIZE).text(b.dek, x, doc.y+2, { width: 220, height: 36, ellipsis: true });
   });
 
   articlePages(doc, edition);
