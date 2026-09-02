@@ -105,6 +105,12 @@ Rules:
 - Put 2-4 main stories in each populated section array, spread across all available sections when possible.
 - sourceLinks must contain only URLs supplied in the input.
 - puzzleWords: 12 uppercase words, 4-10 letters, drawn from neutral concepts in today's coverage.
+- miniCrossword: create one compact 4x4 crossword for even-day editions.
+- miniCrossword.grid must be exactly 4 strings of 4 uppercase A-Z letters, with no spaces or punctuation.
+- miniCrossword.across must have exactly 4 answer/clue objects, one for each grid row in order.
+- miniCrossword.down must have exactly 4 answer/clue objects, one for each grid column in order.
+- Each across answer must exactly match its grid row; each down answer must exactly match its grid column.
+- Crossword clues should be short, fair, and must not include or directly reveal the answer.
 - Return JSON only.
 
 Schema:
@@ -122,7 +128,12 @@ Schema:
     "CULTURE": [],
     "SPORTS": []
   },
-  "puzzleWords": []
+  "puzzleWords": [],
+  "miniCrossword": {
+    "grid": ["WORD", "WORD", "WORD", "WORD"],
+    "across": [{"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}],
+    "down": [{"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}, {"answer":"WORD","clue":""}]
+  }
 }
 
 Feed metadata:
